@@ -1,1 +1,1 @@
-![hey](https://cdn.discordapp.com/attachments/1223253088731922564/1448635658557198437/57947a9fc8fb536437c53725f6b2e364.gif)
+![hey](https://github.com/THMEO-X/xyz-/blob/main/57947a9fc8fb536437c53725f6b2e364.gif)
