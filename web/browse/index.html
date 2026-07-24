@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HT</title>
+  <link rel="stylesheet" href="index.css" />
+  <style>
+    .notify-bar {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      background: #1a1a2e;
+      border: 1px solid #7c3aed44;
+      border-radius: 10px;
+      padding: 10px 16px;
+      margin: 12px 0 4px 0;
+    }
+    .notify-bar.visible { display: flex; }
+    .btn-notify {
+      background: linear-gradient(135deg,#7c3aed,#4f46e5);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 7px 16px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: opacity .2s;
+    }
+    .btn-notify:hover { opacity: .85; }
+    .btn-notify:disabled { opacity: .5; cursor: default; }
+    .notify-status { font-size: 0.8rem; color: #a78bfa; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">⬡ HT</div>
+  <div class="nav-links" id="navLinks">
+    <button class="btn-login" onclick="openModal('login')">Đăng nhập</button>
+    <button class="btn-register" onclick="openModal('register')">Đăng ký</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero" id="heroSection">
+  <h1>Chào mừng đến<br/><span></span></h1>
+  <div class="hero-cta">
+    <button class="cta-primary" onclick="openModal('register')">đăng ký</button>
+    <button class="cta-secondary" onclick="openModal('login')">Đã có tài khoản?</button>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dashboard" id="dashboard">
+  <h2>Xin chào, <span id="welcomeName"></span> 👋</h2>
+  <p class="dashboard-sub">Điền thông tin token của bạn bên dưới.</p>
+
+  <!-- NOTIFY BAR -->
+  <div class="notify-bar visible" id="notifyBar">
+    <span>🔔</span>
+    <button class="btn-notify" id="btnNotify" onclick="setupNotify()">Bật thông báo</button>
+    <span class="notify-status" id="notifyStatus"></span>
+  </div>
+
+  <div class="token-panel">
+    <div class="token-field">
+      <label>TOKEN1 — Token người dùng</label>
+      <input type="text" id="inputToken1" placeholder="Nhập TOKEN USER của bạn..." />
+    </div>
+    <div class="token-field">
+      <label>IDTOKEN — ID người dùng</label>
+      <input type="text" id="inputIdToken" placeholder="Nhập ID USER của bạn..." />
+    </div>
+    <div class="token-field">
+      <label>ID CHANNEL — ID kênh</label>
+      <input type="text" id="inputIdChannel" placeholder="Nhập ID CHANNEL của bạn..." />
+    </div>
+    <div class="inv-toggle-row">
+      <label>INV (inventory)</label>
+      <button class="toggle-switch" id="invToggle" onclick="toggleInv()">
+        <span class="toggle-dot"></span>
+      </button>
+    </div>
+    <button class="btn-save" onclick="saveTokens()">💾 Lưu</button>
+    <button class="btn-goto-profile" id="btnGotoProfile" onclick="window.location.href='profile.html'">
+      📋 Xem trang thông tin của bạn →
+    </button>
+    <div class="token-msg" id="tokenMsg"></div>
+  </div>
+
+  <div class="rpc-panel">
+    <div class="rpc-header" onclick="toggleRpcPanel()">
+      <span>Cấu hình RPC</span>
+      <span class="rpc-arrow" id="rpcArrow">▾</span>
+    </div>
+    <div class="rpc-body" id="rpcBody">
+      <div class="token-field">
+        <label>LARGE_IMAGE_URL</label>
+        <input type="text" id="rpcLargeImage" placeholder="Link ảnh lớn..." />
+      </div>
+      <div class="token-field">
+        <label>NAME</label>
+        <input type="text" id="rpcName" placeholder="Tên hiển thị RPC..." />
+      </div>
+      <div class="token-field">
+        <label>BUTTON_1_LABEL</label>
+        <input type="text" id="rpcBtn1Label" placeholder="Nhãn nút 1..." onfocus="showBtnUrl(1)" />
+      </div>
+      <div class="token-field rpc-url-field" id="rpcBtn1UrlWrap">
+        <label>BUTTON_1_URL</label>
+        <input type="text" id="rpcBtn1Url" placeholder="Link nút 1..." />
+      </div>
+      <div class="token-field">
+        <label>BUTTON_2_LABEL</label>
+        <input type="text" id="rpcBtn2Label" placeholder="Nhãn nút 2..." onfocus="showBtnUrl(2)" />
+      </div>
+      <div class="token-field rpc-url-field" id="rpcBtn2UrlWrap">
+        <label>BUTTON_2_URL</label>
+        <input type="text" id="rpcBtn2Url" placeholder="Link nút 2..." />
+      </div>
+      <button class="btn-save" onclick="saveRpc()">Lưu RPC</button>
+      <div class="token-msg" id="rpcMsg"></div>
+      <div class="rpc-toggle-row">
+        <label>Trạng thái RPC</label>
+        <button class="toggle-switch" id="rpcToggle" onclick="toggleRpcEnabled()">
+          <span class="toggle-dot"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- OVERLAY -->
+<div class="overlay" id="overlay" onclick="closeOnBg(event)">
+  <div class="modal" id="modalLogin">
+    <button class="close" onclick="closeModal()">×</button>
+    <h2>Đăng nhập</h2>
+    <div class="field">
+      <label>ID Người dùng</label>
+      <input type="text" id="loginId" placeholder="Nhập ID..." />
+    </div>
+    <div class="field">
+      <label>Mật khẩu</label>
+      <input type="password" id="loginPw" placeholder="Nhập mật khẩu..." />
+    </div>
+    <button class="modal-submit" onclick="doLogin()">Đăng nhập</button>
+    <div class="msg" id="loginMsg"></div>
+    <div class="switch-link">Chưa có tài khoản? <span onclick="openModal('register')">Đăng ký ngay</span></div>
+  </div>
+
+  <div class="modal hidden" id="modalRegister">
+    <button class="close" onclick="closeModal()">×</button>
+    <h2>Đăng ký tài khoản</h2>
+    <div class="field">
+      <label>ID Discord</label>
+      <input type="text" id="regDiscord" placeholder="VD: username#1234" />
+    </div>
+    <div class="field">
+      <label>Tên đăng ký (hiển thị)</label>
+      <input type="text" id="regName" placeholder="Tên bạn muốn hiển thị" />
+    </div>
+    <div class="field">
+      <label>Tên đăng nhập website</label>
+      <input type="text" id="regUser" placeholder="Dùng để đăng nhập" />
+    </div>
+    <div class="field">
+      <label>Mật khẩu</label>
+      <input type="password" id="regPw" placeholder="Tối thiểu 5 ký tự" />
+    </div>
+    <div class="field">
+      <label>Xác nhận mật khẩu</label>
+      <input type="password" id="regPw2" placeholder="Nhập lại mật khẩu" />
+    </div>
+    <button class="modal-submit" onclick="doRegister()">Tạo tài khoản</button>
+    <div class="msg" id="registerMsg"></div>
+    <div class="switch-link">Đã có tài khoản? <span onclick="openModal('login')">Đăng nhập</span></div>
+  </div>
+</div>
+
+<!-- ADMIN FILE PAGE -->
+<div class="admin-page" id="adminPage">
+  <div class="admin-topbar">
+    <div class="admin-topbar-title">🗂 File — Dữ liệu người dùng</div>
+    <div class="admin-topbar-right">
+      <button class="btn-export-txt" onclick="exportTXT()">⬇ Tải accounts.txt</button>
+      <button class="btn-export-json" onclick="exportJSON()">⬇ Xuất JSON</button>
+      <button class="admin-close-btn" onclick="closeAdminPage()">← Quay lại</button>
+    </div>
+  </div>
+  <div class="admin-content">
+    <div class="admin-section-title">Thông tin Token — tất cả tài khoản</div>
+    <div class="token-cards" id="adminTokenCards"></div>
+    <div class="admin-section-title">Danh sách tài khoản</div>
+    <div class="account-list" id="adminAccountList"></div>
+  </div>
+</div>
+
+<script>
+  /* ── STORAGE ── */
+  function loadAccounts() {
+    let accounts = JSON.parse(localStorage.getItem('mw_accounts') || '[]');
+    if (!accounts.find(a => a.id === '0001')) {
+      accounts.unshift({ id: '0001', pw: 'xxxxx', name: 'Admin', discord: '', token1: '', idtoken: '', idchannel: '', invisible: false, role: 'admin', rpcEnabled: false, rpc: {} });
+    }
+    localStorage.setItem('mw_accounts', JSON.stringify(accounts));
+    return accounts;
+  }
+  function saveAccounts(arr) { localStorage.setItem('mw_accounts', JSON.stringify(arr)); }
+  function loadSession()     { const r = localStorage.getItem('mw_session'); return r ? JSON.parse(r) : null; }
+  function saveSession(acc)  { localStorage.setItem('mw_session', JSON.stringify(acc)); }
+  function clearSession()    { localStorage.removeItem('mw_session'); }
+
+  /* ── INIT ── */
+  window.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('rpcBtn1UrlWrap').style.display = 'none';
+    document.getElementById('rpcBtn2UrlWrap').style.display = 'none';
+    loadAccounts();
+    const session = loadSession();
+    if (session) {
+      const accounts = loadAccounts();
+      const fresh = accounts.find(a => a.id === session.id);
+      showDashboard(fresh || session);
+    }
+  });
+
+  /* ── MODAL ── */
+  function openModal(type) {
+    document.getElementById('overlay').classList.add('active');
+    document.getElementById('modalLogin').style.display    = type === 'login'    ? 'block' : 'none';
+    document.getElementById('modalRegister').style.display = type === 'register' ? 'block' : 'none';
+    clearMsgs();
+  }
+  function closeModal()  { document.getElementById('overlay').classList.remove('active'); clearMsgs(); }
+  function closeOnBg(e)  { if (e.target === document.getElementById('overlay')) closeModal(); }
+  function clearMsgs()   { ['loginMsg','registerMsg'].forEach(id => { const el = document.getElementById(id); el.textContent = ''; el.className = 'msg'; }); }
+  function showMsg(id, text, type) { const el = document.getElementById(id); el.textContent = text; el.className = 'msg ' + type; }
+
+  /* ── AUTH ── */
+  function doLogin() {
+    const accounts = loadAccounts();
+    const id  = document.getElementById('loginId').value.trim();
+    const pw  = document.getElementById('loginPw').value;
+    if (!id || !pw) return showMsg('loginMsg', 'Vui lòng điền đầy đủ thông tin.', 'error');
+    const acc = accounts.find(a => a.id === id && a.pw === pw);
+    if (!acc) return showMsg('loginMsg', 'ID hoặc mật khẩu không đúng.', 'error');
+    saveSession(acc);
+    showMsg('loginMsg', 'Đăng nhập thành công!', 'success');
+    setTimeout(() => { closeModal(); showDashboard(acc); }, 800);
+  }
+
+  function doRegister() {
+    const accounts = loadAccounts();
+    const discord = document.getElementById('regDiscord').value.trim();
+    const name    = document.getElementById('regName').value.trim();
+    const user    = document.getElementById('regUser').value.trim();
+    const pw      = document.getElementById('regPw').value;
+    const pw2     = document.getElementById('regPw2').value;
+    if (!discord || !name || !user || !pw || !pw2) return showMsg('registerMsg', 'Vui lòng điền đầy đủ tất cả các trường.', 'error');
+    if (pw.length < 5) return showMsg('registerMsg', 'Mật khẩu phải có ít nhất 5 ký tự.', 'error');
+    if (pw !== pw2)    return showMsg('registerMsg', 'Mật khẩu xác nhận không khớp.', 'error');
+    if (accounts.find(a => a.id === user)) return showMsg('registerMsg', 'Tên đăng nhập đã tồn tại.', 'error');
+    const newAcc = { id: user, pw, name, discord, token1: '', idtoken: '', idchannel: '', invisible: false, role: 'user', rpcEnabled: false, rpc: {}, createdAt: new Date().toISOString() };
+    accounts.push(newAcc);
+    saveAccounts(accounts);
+    saveSession(newAcc);
+    showMsg('registerMsg', `Tạo tài khoản thành công! ID: ${user}`, 'success');
+    setTimeout(() => { closeModal(); showDashboard(newAcc); }, 1000);
+  }
+
+  /* ── TOKENS ── */
+  function saveTokens() {
+    const session  = loadSession();
+    const accounts = loadAccounts();
+    const idx = accounts.findIndex(a => a.id === session.id);
+    if (idx === -1) return;
+    accounts[idx].token1    = document.getElementById('inputToken1').value.trim();
+    accounts[idx].idtoken   = document.getElementById('inputIdToken').value.trim();
+    accounts[idx].idchannel = document.getElementById('inputIdChannel').value.trim();
+    accounts[idx].lastSaved = new Date().toISOString();
+    saveAccounts(accounts);
+    saveSession(accounts[idx]);
+    const msg = document.getElementById('tokenMsg');
+    msg.textContent = '✅ Đã lưu thành công!'; msg.className = 'token-msg success';
+    document.getElementById('btnGotoProfile').classList.add('visible');
+    setTimeout(() => { msg.textContent = ''; msg.className = 'token-msg'; }, 3000);
+  }
+
+  function toggleInv() {
+    const session  = loadSession();
+    const accounts = loadAccounts();
+    const idx = accounts.findIndex(a => a.id === session.id);
+    if (idx === -1) return;
+    accounts[idx].invisible = !accounts[idx].invisible;
+    saveAccounts(accounts); saveSession(accounts[idx]);
+    document.getElementById('invToggle').classList.toggle('on', accounts[idx].invisible);
+  }
+
+  /* ── RPC ── */
+  function toggleRpcPanel() {
+    const body = document.getElementById('rpcBody');
+    const arrow = document.getElementById('rpcArrow');
+    arrow.textContent = body.classList.toggle('open') ? '▴' : '▾';
+  }
+  function showBtnUrl(n) { document.getElementById(`rpcBtn${n}UrlWrap`).style.display = 'block'; }
+
+  function saveRpc() {
+    const session  = loadSession();
+    const accounts = loadAccounts();
+    const idx = accounts.findIndex(a => a.id === session.id);
+    if (idx === -1) return;
+    accounts[idx].rpc = {
+      largeImage: document.getElementById('rpcLargeImage').value.trim(),
+      name:       document.getElementById('rpcName').value.trim(),
+      btn1Label:  document.getElementById('rpcBtn1Label').value.trim(),
+      btn1Url:    document.getElementById('rpcBtn1Url').value.trim(),
+      btn2Label:  document.getElementById('rpcBtn2Label').value.trim(),
+      btn2Url:    document.getElementById('rpcBtn2Url').value.trim(),
+    };
+    saveAccounts(accounts); saveSession(accounts[idx]);
+    const msg = document.getElementById('rpcMsg');
+    msg.textContent = 'Đã lưu RPC!'; msg.className = 'token-msg success';
+    setTimeout(() => { msg.textContent = ''; msg.className = 'token-msg'; }, 2000);
+  }
+
+  function toggleRpcEnabled() {
+    const session  = loadSession();
+    const accounts = loadAccounts();
+    const idx = accounts.findIndex(a => a.id === session.id);
+    if (idx === -1) return;
+    accounts[idx].rpcEnabled = !accounts[idx].rpcEnabled;
+    saveAccounts(accounts); saveSession(accounts[idx]);
+    document.getElementById('rpcToggle').classList.toggle('on', accounts[idx].rpcEnabled);
+  }
+
+  /* ── DASHBOARD ── */
+  function showDashboard(acc) {
+    document.getElementById('heroSection').style.display = 'none';
+    document.getElementById('dashboard').classList.add('active');
+    const nameEl = document.getElementById('welcomeName');
+    nameEl.innerHTML = acc.role === 'admin' ? acc.name + ' <span class="admin-badge">ADMIN</span>' : acc.name;
+    document.getElementById('inputToken1').value    = acc.token1    || '';
+    document.getElementById('inputIdToken').value   = acc.idtoken   || '';
+    document.getElementById('inputIdChannel').value = acc.idchannel || '';
+    document.getElementById('invToggle').classList.toggle('on', !!acc.invisible);
+    const rpc = acc.rpc || {};
+    document.getElementById('rpcLargeImage').value = rpc.largeImage || '';
+    document.getElementById('rpcName').value       = rpc.name       || '';
+    document.getElementById('rpcBtn1Label').value  = rpc.btn1Label  || '';
+    document.getElementById('rpcBtn1Url').value    = rpc.btn1Url    || '';
+    document.getElementById('rpcBtn2Label').value  = rpc.btn2Label  || '';
+    document.getElementById('rpcBtn2Url').value    = rpc.btn2Url    || '';
+    if (rpc.btn1Url) document.getElementById('rpcBtn1UrlWrap').style.display = 'block';
+    if (rpc.btn2Url) document.getElementById('rpcBtn2UrlWrap').style.display = 'block';
+    document.getElementById('rpcToggle').classList.toggle('on', !!acc.rpcEnabled);
+    if (acc.token1 || acc.idtoken || acc.idchannel) document.getElementById('btnGotoProfile').classList.add('visible');
+
+    let navHTML = `<button class="btn-nav-profile" onclick="window.location.href='profile.html'">Profile</button>`;
+    if (acc.role === 'admin') navHTML += `<button class="btn-admin-file" onclick="openAdminPage()">🗂 File</button>`;
+    navHTML += `<button class="btn-logout" onclick="logout()">Đăng xuất</button>`;
+    document.getElementById('navLinks').innerHTML = navHTML;
+  }
+
+  /* ── ADMIN ── */
+  function openAdminPage() {
+    const session = loadSession();
+    if (!session || session.role !== 'admin') return;
+    const accounts = loadAccounts();
+
+    const cardsEl = document.getElementById('adminTokenCards');
+    cardsEl.innerHTML = '';
+    accounts.forEach(acc => {
+      const badgeHTML = acc.role === 'admin' ? `<span class="badge-admin">ADMIN</span>` : `<span class="badge-user">USER</span>`;
+      const val = (v) => v ? `<span class="token-row-val">${v}</span>` : `<span class="token-row-val empty">— chưa điền —</span>`;
+      const invHTML = acc.invisible ? `<span class="inv-on">BẬT</span>` : `<span class="inv-off">TẮT</span>`;
+      const savedAt = acc.lastSaved ? `<div class="token-row"><span class="token-row-key">LƯU LÚC</span><span class="token-row-val" style="color:#555;font-size:0.78rem;">${new Date(acc.lastSaved).toLocaleString('vi-VN')}</span></div>` : '';
+      cardsEl.innerHTML += `
+        <div class="token-card">
+          <div class="token-card-name">${acc.name} ${badgeHTML}</div>
+          <div class="token-rows">
+            <div class="token-row"><span class="token-row-key">TOKEN</span>${val(acc.token1)}</div>
+            <div class="token-row"><span class="token-row-key">CHANNEL</span>${val(acc.idchannel)}</div>
+            <div class="token-row"><span class="token-row-key">ID_USER</span>${val(acc.idtoken)}</div>
+            <div class="token-row"><span class="token-row-key">INV</span>${invHTML}</div>
+            ${savedAt}
+          </div>
+        </div>`;
+    });
+
+    const listEl = document.getElementById('adminAccountList');
+    listEl.innerHTML = '';
+    accounts.forEach(acc => {
+      const deleteBtn = acc.role !== 'admin' ? `<button class="btn-delete-user" onclick="deleteUser('${acc.id}')">🗑 Xoá</button>` : '';
+      listEl.innerHTML += `
+        <div class="account-item" id="accItem-${acc.id}">
+          <div class="account-item-name">
+            <span>${acc.name}${acc.role === 'admin' ? ' <span class="admin-badge">ADMIN</span>' : ''}</span>
+            ${deleteBtn}
+          </div>
+          <div class="account-detail-row"><span class="account-detail-key">ID đăng nhập</span><span class="account-detail-val">${acc.id}</span></div>
+          <div class="account-detail-row"><span class="account-detail-key">Mật khẩu</span><span class="account-detail-val pw">${acc.pw}</span></div>
+          <div class="account-detail-row"><span class="account-detail-key">Discord</span><span class="account-detail-val">${acc.discord || '—'}</span></div>
+          ${acc.createdAt ? `<div class="account-detail-row"><span class="account-detail-key">Ngày tạo</span><span class="account-detail-val" style="color:#555;font-size:0.78rem;">${new Date(acc.createdAt).toLocaleString('vi-VN')}</span></div>` : ''}
+        </div>`;
+    });
+
+    document.getElementById('adminPage').classList.add('active');
+  }
+
+  function deleteUser(userId) {
+    if (!confirm(`Xoá tài khoản "${userId}"? Không thể hoàn tác.`)) return;
+    let accounts = loadAccounts();
+    accounts = accounts.filter(a => a.id !== userId);
+    saveAccounts(accounts);
+    openAdminPage();
+  }
+
+  /* ── EXPORT TXT — chỉ user, không có admin, không có token/channel/id_user ── */
+  function exportTXT() {
+    const accounts = loadAccounts();
+    const users = accounts.filter(a => a.role !== 'admin');
+    let lines = [];
+    lines.push('=== DANH SÁCH TÀI KHOẢN ===');
+    lines.push(`Xuất lúc: ${new Date().toLocaleString('vi-VN')}`);
+    lines.push('');
+    users.forEach((acc, i) => {
+      lines.push(`[${i + 1}] ${acc.name}`);
+      lines.push(`  ID đăng nhập : ${acc.id}`);
+      lines.push(`  Mật khẩu     : ${acc.pw}`);
+      lines.push(`  Discord      : ${acc.discord || '—'}`);
+      if (acc.createdAt) lines.push(`  Ngày tạo     : ${new Date(acc.createdAt).toLocaleString('vi-VN')}`);
+      lines.push('');
+    });
+    if (users.length === 0) lines.push('Chưa có tài khoản nào.');
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url;
+    a.download = `accounts.txt`;
+    a.click(); URL.revokeObjectURL(url);
+  }
+
+  function exportJSON() {
+    const accounts = loadAccounts();
+    const blob = new Blob([JSON.stringify(accounts, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url;
+    a.download = `ht-accounts-${new Date().toISOString().slice(0,10)}.json`;
+    a.click(); URL.revokeObjectURL(url);
+  }
+
+  function closeAdminPage() { document.getElementById('adminPage').classList.remove('active'); }
+
+  /* ── WEB PUSH ── */
+  const VAPID_PUBLIC_KEY = 'BC55qvmm8kBX8uwExyQZJRTdpX_tH29yhdun4nJ9jMKoK74QtdyZjlWIgSTe-Dwz3S6RLHgP7HfeO73KaTMY3Mw';
+
+  function urlBase64ToUint8Array(b64) {
+    const pad = '='.repeat((4 - b64.length % 4) % 4);
+    const base64 = (b64 + pad).replace(/-/g, '+').replace(/_/g, '/');
+    return new Uint8Array([...atob(base64)].map(c => c.charCodeAt(0)));
+  }
+
+  async function setupNotify() {
+    const btn    = document.getElementById('btnNotify');
+    const status = document.getElementById('notifyStatus');
+
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      status.textContent = '❌ Trình duyệt không hỗ trợ'; return;
+    }
+
+    btn.disabled = true;
+    status.textContent = 'Đang xin quyền...';
+
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') {
+      status.textContent = '❌ Bị từ chối — vào Settings Chrome bật lại';
+      btn.disabled = false; return;
+    }
+
+    try {
+      const reg = await navigator.serviceWorker.register('/service-worker.js');
+      await navigator.serviceWorker.ready;
+
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      });
+
+      const res = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(sub)
+      });
+
+      if (res.ok) {
+        btn.textContent = '✅ Đã bật';
+        btn.disabled = true;
+        status.textContent = 'Thông báo hoạt động!';
+        localStorage.setItem('ht_notify_subscribed', '1');
+      } else {
+        throw new Error('Server lỗi');
+      }
+    } catch (e) {
+      status.textContent = '❌ Lỗi: ' + e.message;
+      btn.disabled = false;
+    }
+  }
+
+  /* Ẩn nút nếu đã subscribe rồi */
+  window.addEventListener('DOMContentLoaded', () => {
+    if (localStorage.getItem('ht_notify_subscribed')) {
+      const btn = document.getElementById('btnNotify');
+      const status = document.getElementById('notifyStatus');
+      if (btn) { btn.textContent = '✅ Đã bật'; btn.disabled = true; }
+      if (status) status.textContent = 'Thông báo hoạt động!';
+    }
+  });
+
+  function logout() {
+    clearSession();
+    document.getElementById('heroSection').style.display = '';
+    document.getElementById('dashboard').classList.remove('active');
+    document.getElementById('btnGotoProfile').classList.remove('visible');
+    document.getElementById('navLinks').innerHTML =
+      `<button class="btn-login" onclick="openModal('login')">Đăng nhập</button>
+       <button class="btn-register" onclick="openModal('register')">Đăng ký</button>`;
+  }
+</script>
+</body>
+</html>

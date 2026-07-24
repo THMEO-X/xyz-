@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Profile — Thông tin token</title>
+  <link rel="stylesheet" href="profile.css" />
+</head>
+<body>
+
+<nav>
+  <div class="logo" onclick="window.location.href='index.html'">⬡ MyWebsite</div>
+  <div class="nav-right">
+    <button class="btn-back" onclick="window.location.href='index.html'">← Quay lại</button>
+    <button class="btn-logout" id="navLogout" onclick="logout()">Đăng xuất</button>
+  </div>
+</nav>
+
+<div class="page-wrap" id="pageWrap">
+
+  <div class="profile-header">
+    <div class="profile-avatar" id="avatarEmoji">👤</div>
+    <div class="profile-name"   id="profileName"></div>
+    <div class="profile-id"     id="profileIdLine"></div>
+  </div>
+
+  <div class="info-card">
+    <div class="info-card-header">
+      <span>🔑 Thông tin Token</span>
+      <button class="btn-edit" id="btnEditToken" onclick="toggleEdit()">✏️ Chỉnh sửa</button>
+    </div>
+    <div class="info-rows">
+      <div class="info-row">
+        <span class="info-row-key">TOKEN</span>
+        <span class="info-row-val" id="dispToken">—</span>
+      </div>
+      <div class="info-row">
+        <span class="info-row-key">ID USER</span>
+        <span class="info-row-val" id="dispIdToken">—</span>
+      </div>
+      <div class="info-row">
+        <span class="info-row-key">CHANNEL</span>
+        <span class="info-row-val" id="dispChannel">—</span>
+      </div>
+      <div class="info-row">
+        <span class="info-row-key">INV</span>
+        <span class="info-row-val" id="dispInv">—</span>
+      </div>
+    </div>
+
+    <div class="edit-field" id="editSection">
+      <div class="ef-row">
+        <label>TOKEN</label>
+        <input type="text" id="editToken" placeholder="Nhập TOKEN USER..." />
+      </div>
+      <div class="ef-row">
+        <label>ID USER</label>
+        <input type="text" id="editIdToken" placeholder="Nhập ID USER..." />
+      </div>
+      <div class="ef-row">
+        <label>CHANNEL</label>
+        <input type="text" id="editChannel" placeholder="Nhập ID CHANNEL..." />
+      </div>
+      <div class="ef-toggle-row">
+        <label>INV (inventory)</label>
+        <button class="toggle-switch" id="editInvToggle" onclick="toggleEditInv()">
+          <span class="toggle-dot"></span>
+        </button>
+      </div>
+      <button class="btn-save-edit" onclick="saveEdit()">💾 Lưu thay đổi</button>
+      <div class="save-msg" id="saveMsg"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="no-session" id="noSession">
+  <h2>Bạn chưa đăng nhập</h2>
+  <button onclick="window.location.href='index.html'">← Về trang chủ</button>
+</div>
+
+<script>
+  let editInvState = false;
+
+  function loadAccounts() { return JSON.parse(localStorage.getItem('mw_accounts') || '[]'); }
+  function saveAccounts(arr) { localStorage.setItem('mw_accounts', JSON.stringify(arr)); }
+  function loadSession() { const r = localStorage.getItem('mw_session'); return r ? JSON.parse(r) : null; }
+  function saveSession(acc) { localStorage.setItem('mw_session', JSON.stringify(acc)); }
+
+  function logout() { localStorage.removeItem('mw_session'); window.location.href = 'index.html'; }
+
+  async function syncToServer(acc) {
+    try {
+      const res = await fetch('/api/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id:        acc.id,
+          token1:    acc.token1    || '',
+          idtoken:   acc.idtoken   || '',
+          idchannel: acc.idchannel || '',
+          invisible: acc.invisible || false
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Lỗi server');
+      return { ok: true };
+    } catch (err) {
+      console.error('[sync]', err);
+      return { ok: false, error: err.message };
+    }
+  }
+
+  function renderProfile(acc) {
+    document.getElementById('avatarEmoji').textContent = acc.role === 'admin' ? '⚡' : '👤';
+    document.getElementById('profileName').innerHTML = acc.role === 'admin'
+      ? acc.name + ' <span class="admin-badge">ADMIN</span>'
+      : acc.name;
+    document.getElementById('profileIdLine').textContent =
+      'ID: ' + acc.id + (acc.discord ? ' · ' + acc.discord : '');
+
+    const setVal = (id, val) => {
+      const el = document.getElementById(id);
+      if (val) { el.textContent = val; el.classList.remove('empty'); }
+      else     { el.textContent = 'Chưa có'; el.classList.add('empty'); }
+    };
+    setVal('dispToken',   acc.token1);
+    setVal('dispIdToken', acc.idtoken);
+    setVal('dispChannel', acc.idchannel);
+
+    const invVal = !!acc.invisible;
+    document.getElementById('dispInv').innerHTML =
+      `<span class="inv-badge ${invVal}">${invVal ? 'true' : 'false'}</span>`;
+
+    document.getElementById('editToken').value   = acc.token1    || '';
+    document.getElementById('editIdToken').value = acc.idtoken   || '';
+    document.getElementById('editChannel').value = acc.idchannel || '';
+    editInvState = invVal;
+    document.getElementById('editInvToggle').classList.toggle('on', editInvState);
+  }
+
+  function toggleEdit() {
+    const section = document.getElementById('editSection');
+    const btn     = document.getElementById('btnEditToken');
+    const isOpen  = section.classList.toggle('open');
+    btn.textContent = isOpen ? '✕ Đóng' : '✏️ Chỉnh sửa';
+    btn.classList.toggle('editing', isOpen);
+  }
+
+  function toggleEditInv() {
+    editInvState = !editInvState;
+    document.getElementById('editInvToggle').classList.toggle('on', editInvState);
+  }
+
+  async function saveEdit() {
+    const session  = loadSession();
+    const accounts = loadAccounts();
+    const idx = accounts.findIndex(a => a.id === session.id);
+    if (idx === -1) return;
+
+    accounts[idx].token1    = document.getElementById('editToken').value.trim();
+    accounts[idx].idtoken   = document.getElementById('editIdToken').value.trim();
+    accounts[idx].idchannel = document.getElementById('editChannel').value.trim();
+    accounts[idx].invisible = editInvState;
+    saveAccounts(accounts);
+    saveSession(accounts[idx]);
+    renderProfile(accounts[idx]);
+
+    const msg = document.getElementById('saveMsg');
+    msg.textContent = '⏳ Đang đồng bộ lên server...';
+
+    const result = await syncToServer(accounts[idx]);
+
+    if (result.ok) {
+      msg.textContent = '✅ Đã lưu & đồng bộ server!';
+    } else {
+      msg.textContent = `⚠️ Lưu local OK — server lỗi: ${result.error}`;
+    }
+    setTimeout(() => { msg.textContent = ''; }, 3000);
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    const session   = loadSession();
+    const pageWrap  = document.getElementById('pageWrap');
+    const noSession = document.getElementById('noSession');
+    const navLogout = document.getElementById('navLogout');
+
+    pageWrap.style.display  = 'none';
+    noSession.style.display = 'none';
+    navLogout.style.display = 'none';
+
+    if (!session) {
+      noSession.style.display = 'block';
+      return;
+    }
+
+    pageWrap.style.display  = 'block';
+    navLogout.style.display = 'inline-block';
+
+    const accounts = loadAccounts();
+    const acc = accounts.find(a => a.id === session.id) || session;
+    renderProfile(acc);
+  });
+</script>
+</body>
+</html>

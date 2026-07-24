@@ -1,0 +1,16 @@
+{
+  "APPLICATION_ID": "1390674997777010770",
+  
+  
+  
+  "LARGE_IMAGE_URL": "https://cdn.discordapp.com/attachments/1223253088731922564/1448635658557198437/57947a9fc8fb536437c53725f6b2e364.gif",
+  "Name": "RPC RUNING",
+  "Deltails": "create HT",
+  "BUTTON_1_LABEL": "NPC",
+  "BUTTON_1_URL": "https://github.com/THMEO-X",
+  "BUTTON_2_LABEL": "Hey",
+  "BUTTON_2_URL": "https://m.youtube.com/watch?v=7f_CT4Cjszo&pp=iggCQAE%3D",
+  "settings": {
+    "discordrpc": true
+  }
+}
