@@ -2,17 +2,14 @@
 
 
 <div align="center">
+  <table>
+    <tr>
+      <td align="center" style="background-color:#331CA8; border-radius:8px; padding:16px;">
+        <b>I am not responsible for any violations you may be subject to. owo  And for Discord, use the code on a separate server.not a public server**
 
 
-
-![](https://via.placeholder.com/600x60/331CA8/F0EEFF.png?text=⚠️+DISCLAIMER)
-
-
-
-> 
-
-![#331CA8](https://via.placeholder.com/8x8/331CA8/331CA8.png)
-
- **I am not responsible for any violations you may be subject to. owo  And for Discord, use the code on a separate server.not a public server**
-
+</b>
+      </td>
+    </tr>
+  </table>
 </div>
